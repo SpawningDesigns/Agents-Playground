@@ -1,0 +1,55 @@
+[project]
+name = "draftr"
+version = "0.1.0"
+description = "draftr using crewAI"
+authors = [{ name = "Your Name", email = "you@example.com" }]
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "crewai[tools]==1.9.3",
+    "chromadb-client>=0.5.0",     # thin HTTP client — no onnxruntime transitive dependency
+    "sentence-transformers>=3.0.0",
+    "pypdf>=4.0.0",
+    "python-docx>=1.1.0",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+draftr = "draftr.main:run"
+run_crew = "draftr.main:run"
+train = "draftr.main:train"
+replay = "draftr.main:replay"
+test = "draftr.main:test"
+run_with_trigger = "draftr.main:run_with_trigger"
+ingest_bids = "draftr.scripts.ingest_bids:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.crewai]
+type = "crew"
+
+[tool.uv]
+# Platform wheel audit (run: uv sync --dry-run to verify):
+#
+#   Package               Intel Mac (x86_64)   ARM Mac (arm64)   Linux   Windows
+#   ──────────────────── ──────────────────── ───────────────── ─────── ───────
+#   chromadb-client       pure Python ✓        ✓                 ✓       ✓
+#   onnxruntime           N/A (not pulled in)  N/A               N/A     N/A
+#   torch                 dropped in 2.3 ✗     2.11 ✓            ✓       ✓
+#   sentence-transformers pure Python ✓        ✓                 ✓       ✓
+#   tokenizers            10.12+ x86_64 ✓      ✓                 ✓       ✓
+#   safetensors           10.12+ x86_64 ✓      ✓                 ✓       ✓
+#   grpcio                universal2 ✓         ✓                 ✓       ✓
+#   pypdf                 pure Python ✓        ✓                 ✓       ✓
+#   python-docx           pure Python ✓        ✓                 ✓       ✓
+#   pyyaml                ✓                    ✓                 ✓       ✓
+#
+# Only torch needs a platform override.
+override-dependencies = [
+    # PyTorch dropped Intel Mac (x86_64) wheels in 2.3.0.
+    # 2.2.2 is the last release with a macosx_10_9_x86_64 wheel.
+    # sentence-transformers 3.x requires torch>=1.11, so 2.2.2 is fully compatible.
+    # This override is ignored on all other platforms (ARM Mac, Linux, Windows).
+    "torch>=2.0.0,<=2.2.2; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+]

@@ -1,0 +1,62 @@
+# Draftr runtime configuration
+# All values here act as defaults and can be overridden by CLI flags.
+
+# ── Logging ────────────────────────────────────────────────────────────────
+logging:
+  # Verbosity level: DEBUG | INFO | WARNING | ERROR
+  level: "INFO"
+
+
+# ── RFP inputs ─────────────────────────────────────────────────────────────
+rfp:
+  # Absolute or project-relative path to the RFP PDF file.
+  # Override with: --rfp-path /path/to/rfp.pdf
+  path: ""
+
+  # Name of the client / issuing organisation.
+  # Override with: --client-name "Acme Corp"
+  client_name: ""
+
+  # Tone guide passed verbatim to the Technical Writer agent.
+  # Examples: "formal government", "commercial enterprise", "startup-friendly"
+  # Override with: --rfp-tone "formal government"
+  tone: "formal government"
+
+# ── Output ─────────────────────────────────────────────────────────────────
+output:
+  # Directory where all task output files are written (auto-created).
+  # Override with: --output-dir /path/to/output
+  dir: "output"
+
+# ── Knowledge Vault — ChromaDB connection ─────────────────────────────────
+vault:
+  # Host and port of the running ChromaDB HTTP server.
+  host: "localhost"
+  port: 8170
+
+  # Name of the ChromaDB collection that stores the embedded bid chunks.
+  collection: "proposal_mine"
+
+# ── Embedding model ────────────────────────────────────────────────────────
+embedding:
+  # Sentence-transformer model used for both ingestion and retrieval.
+  # Must be the same value in both places — changing it requires a full re-ingest.
+  model: "all-MiniLM-L6-v2"
+
+  # Minimum cosine similarity (0–1) for a snippet to be considered a strong match.
+  # Snippets below this threshold trigger a knowledge_gap flag for the writer.
+  min_relevance_score: 0.75
+
+  # Maximum number of snippets returned per requirement query.
+  top_k: 5
+
+# ── Ingestion pipeline ─────────────────────────────────────────────────────
+ingestion:
+  # Directory containing past winning bid documents (.pdf / .txt / .md / .docx).
+  bids_dir: "knowledge/past_bids"
+
+  # Target character count per chunk.
+  chunk_size: 1000
+
+  # Character overlap between consecutive chunks to preserve context at boundaries.
+  overlap: 150
