@@ -1,0 +1,85 @@
+extract_requirements_task:
+  description: >
+    Carefully read the full RFP document provided at {rfp_path}.
+    Extract every must-have requirement, compliance metric, evaluation
+    criterion, submission format rule, and deadline. Group them into
+    logical categories (e.g., Technical, Legal, Financial, Formatting).
+    Assign each requirement a unique ID (e.g., REQ-001) and a priority
+    label (mandatory / preferred). Do not paraphrase — preserve the
+    original wording alongside your structured entry.
+  expected_output: >
+    A JSON array where each element has the fields:
+    id, category, priority, original_text, and plain_english_summary.
+    Example: [{"id": "REQ-001", "category": "Technical", "priority":
+    "mandatory", "original_text": "...", "plain_english_summary": "..."}]
+  agent: requirements_architect
+  output_format: output/requirements.json
+
+retrieve_knowledge_task:
+  description: >
+    Using the structured requirements list produced in the previous step,
+    query the company Knowledge Vault for each requirement. For every
+    requirement ID, find the most relevant past proposal sections, case
+    studies, certifications, or boilerplate answers. Rank retrieved
+    snippets by relevance score. Flag any requirement for which no strong
+    match (score < 0.75) was found — these are knowledge gaps that the
+    writer must draft from scratch.
+  expected_output: >
+    A JSON object keyed by requirement ID. Each value contains a list of
+    retrieved snippets with fields: source_document, relevance_score, and
+    snippet_text. Requirements with no strong match must appear under a
+    top-level "knowledge_gaps" array.
+    Example: {"REQ-001": [{"source_document": "...", "relevance_score":
+    0.92, "snippet_text": "..."}], "knowledge_gaps": ["REQ-007"]}
+  agent: knowledge_retriever
+  context:
+    - extract_requirements_task
+  output_format: output/knowledge.json
+
+draft_proposal_task:
+  description: >
+    Using the requirements list and the retrieved knowledge snippets,
+    write a complete first-draft proposal that responds to {rfp_path}.
+    For each requirement, write a dedicated response section clearly
+    labelled with the requirement ID. Incorporate relevant retrieved
+    snippets naturally — do not paste them verbatim without adaptation.
+    For knowledge-gap requirements, write original content. Use the
+    client's name {client_name} and tailor the tone to {rfp_tone}
+    (e.g., formal government, commercial enterprise). The proposal must
+    follow this section order: Executive Summary, Technical Approach,
+    Management Plan, Past Performance, Pricing Narrative, Compliance
+    Matrix.
+  expected_output: >
+    A complete first-draft proposal formatted in Markdown. Every section
+    must begin with a heading that includes the relevant requirement IDs
+    it addresses. The final section must be a Compliance Matrix table
+    with columns: Requirement ID | RFP Section | Proposal Section | Status.
+  agent: technical_writer
+  context:
+    - extract_requirements_task
+    - retrieve_knowledge_task
+  output_format: output/proposal.md
+
+audit_compliance_task:
+  description: >
+    Perform a line-by-line compliance audit of the first-draft proposal
+    against every requirement in the original requirements list. For each
+    requirement ID, determine whether the proposal fully addresses it,
+    partially addresses it, or omits it entirely. If the proposal is
+    fully compliant across all mandatory requirements, produce a final
+    approved document with a compliance stamp. If any mandatory
+    requirement is missed or only partially addressed, produce a Gap
+    Report detailing exactly what is missing and recommending specific
+    edits, then return it to the writer for revision.
+  expected_output: >
+    Either (a) a Gap Report in Markdown with a summary table (columns:
+    Requirement ID | Status | Gap Description | Recommended Fix) followed
+    by detailed notes for each gap — OR (b) the final approved proposal
+    in Markdown appended with a "COMPLIANCE STAMP" section confirming
+    all mandatory requirements are met, the auditor's review date, and
+    the document version number.
+  agent: compliance_auditor
+  context:
+    - extract_requirements_task
+    - draft_proposal_task
+  output_format: output/compliance.md
