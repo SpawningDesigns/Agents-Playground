@@ -9,10 +9,15 @@ from pathlib import Path
 from typing import Optional
 
 import yaml
+from dotenv import find_dotenv, load_dotenv
 
 from draftr.crew import Draftr
 
 warnings.filterwarnings("ignore", category=SyntaxWarning, module="pysbd")
+
+# Walk up from the current working directory to find the nearest .env
+# (typically Agents-Playground/.env when draftr runs as a workspace member).
+load_dotenv(find_dotenv())
 
 _PROJECT_ROOT = Path(__file__).parent.parent.parent
 DEFAULT_CONFIG = _PROJECT_ROOT / "config.yaml"
